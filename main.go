@@ -71,6 +71,11 @@ func main() {
 	err := godotenv.Load()
 	if err != nil { log.Println("Warning: .env file not found, relying on environment variables") }
 
+	lib.SendWebhook(os.Getenv("DISCORD_WEBHOOK_URL"), map[string]interface{}{
+	"content": fmt.Sprintf("Starting flight search: on %s",
+		time.Now().AddDate(0, 1, 0).Format("2006-01-02")),
+	})
+
 	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
 	from       := flag.String("from", "GRU", "Departure IATA code (e.g. GRU, JFK, LHR)")
 	to         := flag.String("to", "JFK", "Arrival IATA code (e.g. JFK, GRU, CDG)")
