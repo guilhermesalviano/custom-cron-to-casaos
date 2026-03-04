@@ -25,7 +25,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_USERNAME }}/my-server-definitive-frontend
+          images: ${{ secrets.DOCKER_USERNAME }}/myscrapers
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
