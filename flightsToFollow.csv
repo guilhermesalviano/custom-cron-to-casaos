@@ -1,0 +1,2 @@
+DepartureID,ArrivalID,OutboundDate,ReturnDate,Adults,TravelClass,Stops,Currency,Language,Country,Day,Time
+GYN,GRU,2026-05-02,,1,1,0,BRL,pt,br,Saturday,08:00

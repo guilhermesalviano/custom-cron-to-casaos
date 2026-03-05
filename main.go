@@ -21,26 +21,59 @@ func main() {
 	err := godotenv.Load()
 	if err != nil { notifier.Notify("Warning: .env file not found, relying on environment variables") }
 
-	output, params := getFlagsValues()
-	if params.APIKey == "" {
+	apiKey := getApiKey()
+	if *apiKey == "" {
 		notifier.Notify("Error: API key required. Use -key flag or set SERPAPI_KEY env var.")
 		os.Exit(1)
 	}
-	notifier.Notify("Initializing Google Flights crawler...")
+
+	flights, err := utils.LoadSearchParams("./flightsToFollow.csv")
+	if err != nil {
+		notifier.Notify("Error loading search params: " + err.Error())
+		os.Exit(1)
+	}
 
 	local, _ := time.LoadLocation("America/Sao_Paulo")
 	scheduler := gocron.NewScheduler(local)
 
-	scheduler.Every(1).Saturday().At("08:00").Do(func() {
-		search(params, output)
-	})
+	for _, flight := range flights {
+		c := lib.SearchParams{
+			APIKey:       *apiKey,
+			DepartureID:  flight.DepartureID,
+			ArrivalID:    flight.ArrivalID,
+			OutboundDate: flight.OutboundDate,
+			ReturnDate:   flight.ReturnDate,
+			Adults:       flight.Adults,
+			TravelClass:  flight.TravelClass,
+			Stops:        flight.Stops,
+			Currency:     flight.Currency,
+			Language:     flight.Language,
+			Country:      flight.Country,
+		}
 
-	notifier.Notify("Scheduler set to run every Saturday at 08:00 São Paulo time. Waiting for next run...")
+		notifier.Notify(fmt.Sprintf("📅 Schedule: %s → %s on %s (every %s at %s)", c.DepartureID, c.ArrivalID, c.OutboundDate, flight.Day, flight.Time))
+
+		_, err := utils.ScheduleOnDay(scheduler, flight.Day).At(flight.Time).Do(func() {
+			startGoogleFlightsCrawler(c, nil)
+		})
+
+		if err != nil { 
+			notifier.Notify(fmt.Sprintf("Error scheduling job: %s", err))
+    	os.Exit(1)
+		}
+	}
 
 	scheduler.StartBlocking()
 }
 
-func getFlagsValues() (*string, lib.SearchParams) {
+func getApiKey() (*string) {
+	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
+	flag.Parse()
+
+	return apiKey
+}
+
+func getFlagsValuesOld() (lib.SearchParams, *string) {
 	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
 	from       := flag.String("from", "GRU", "Departure IATA code (e.g. GRU, JFK, LHR)")
 	to         := flag.String("to", "JFK", "Arrival IATA code (e.g. JFK, GRU, CDG)")
@@ -68,7 +101,7 @@ func getFlagsValues() (*string, lib.SearchParams) {
 		Country:      *country,
 	}
 
-	return output, params
+	return params, output
 }
 
 func printResults(r *entities.SearchResult) {
@@ -118,7 +151,7 @@ func printResults(r *entities.SearchResult) {
 	printSection("Other Flights", r.OtherFlights)
 }
 
-func search(params lib.SearchParams, output *string) {
+func startGoogleFlightsCrawler(params lib.SearchParams, output *string) {
 	notifier.Notify(fmt.Sprintf("🔍 Searching flights %s → %s on %s...\n", params.DepartureID, params.ArrivalID, params.OutboundDate))
 
 	result, err := lib.ScrapeFlights(params)
