@@ -41,6 +41,27 @@ func main() {
 	scheduler.StartBlocking()
 }
 
+func getFlagsValues() (*string, lib.SearchParams) {
+	var p lib.SearchParams
+	var output string
+
+	flag.StringVar(&p.APIKey,       "key",      os.Getenv("SERPAPI_KEY"), "SerpApi API key")
+	flag.StringVar(&p.DepartureID,  "from",     "GYN",        "Departure IATA code")
+	flag.StringVar(&p.ArrivalID,    "to",       "GRU",        "Arrival IATA code")
+	flag.StringVar(&p.OutboundDate, "date",     "2026-05-02", "Outbound date YYYY-MM-DD")
+	flag.StringVar(&p.ReturnDate,   "return",   "",           "Return date YYYY-MM-DD")
+	flag.IntVar(&p.Adults,          "adults",   1,            "Number of adult passengers")
+	flag.IntVar(&p.TravelClass,     "class",    1,            "Travel class")
+	flag.IntVar(&p.Stops,           "stops",    0,            "Max stops")
+	flag.StringVar(&p.Currency,     "currency", "BRL",        "Currency code")
+	flag.StringVar(&p.Language,     "lang",     "pt",         "Language code")
+	flag.StringVar(&p.Country,      "country",  "br",         "Country code")
+	flag.StringVar(&output,         "output",   "",           "Save results to JSON file")
+	flag.Parse()
+
+	return &output, p
+}
+
 func printResults(r *entities.SearchResult) {
 	fmt.Printf("\n╔══════════════════════════════════════════════════════╗\n")
 	fmt.Printf("║         Google Flights — Best Price Crawler          ║\n")
@@ -141,34 +162,4 @@ func insertToDB(db *sql.DB, r *entities.SearchResult) error {
 		time.Now(),
 	)
 	return err
-}
-
-func getFlagsValues() (*string, lib.SearchParams) {
-	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key")
-	from       := flag.String("from", "GYN", "Departure IATA code")
-	to         := flag.String("to", "GRU", "Arrival IATA code")
-	outbound   := flag.String("date", "2026-05-02", "Outbound date YYYY-MM-DD")
-	returnDate := flag.String("return", "", "Return date YYYY-MM-DD")
-	adults     := flag.Int("adults", 1, "Number of adult passengers")
-	class      := flag.Int("class", 1, "Travel class")
-	stops      := flag.Int("stops", 0, "Max stops")
-	currency   := flag.String("currency", "BRL", "Currency code")
-	lang       := flag.String("lang", "pt", "Language code")
-	country    := flag.String("country", "br", "Country code")
-	output     := flag.String("output", "", "Save results to JSON file")
-	flag.Parse()
-
-	return output, lib.SearchParams{
-		APIKey:       *apiKey,
-		DepartureID:  *from,
-		ArrivalID:    *to,
-		OutboundDate: *outbound,
-		ReturnDate:   *returnDate,
-		Adults:       *adults,
-		TravelClass:  *class,
-		Stops:        *stops,
-		Currency:     *currency,
-		Language:     *lang,
-		Country:      *country,
-	}
 }
