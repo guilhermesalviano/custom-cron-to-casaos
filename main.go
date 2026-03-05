@@ -37,6 +37,9 @@ func main() {
 	scheduler := gocron.NewScheduler(local)
 
 	for _, flight := range flights {
+		notifier.Notify(fmt.Sprintf("📅 Schedule: %s → %s on %s (every %s at %s)",
+			flight.DepartureID, flight.ArrivalID, flight.OutboundDate, flight.Day, flight.Time))
+
 		c := lib.SearchParams{
 			APIKey:       *apiKey,
 			DepartureID:  flight.DepartureID,
@@ -50,8 +53,6 @@ func main() {
 			Language:     flight.Language,
 			Country:      flight.Country,
 		}
-
-		notifier.Notify(fmt.Sprintf("📅 Schedule: %s → %s on %s (every %s at %s)", c.DepartureID, c.ArrivalID, c.OutboundDate, flight.Day, flight.Time))
 
 		_, err := utils.ScheduleOnDay(scheduler, flight.Day).At(flight.Time).Do(func() {
 			startGoogleFlightsCrawler(c, nil)
