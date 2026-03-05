@@ -8,7 +8,6 @@ import (
 	"sort"
 	"time"
 	"github.com/joho/godotenv"
-	"log"
 	"database/sql"
 	"github.com/go-co-op/gocron"
 
@@ -21,40 +20,14 @@ import (
 
 func main() {
 	err := godotenv.Load()
-	if err != nil { log.Println("Warning: .env file not found, relying on environment variables") }
+	if err != nil { notifier.Notify("Warning: .env file not found, relying on environment variables") }
 
-	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
-	from       := flag.String("from", "GRU", "Departure IATA code (e.g. GRU, JFK, LHR)")
-	to         := flag.String("to", "JFK", "Arrival IATA code (e.g. JFK, GRU, CDG)")
-	outbound   := flag.String("date", time.Now().AddDate(0, 1, 0).Format("2006-01-02"), "Outbound date YYYY-MM-DD")
-	returnDate := flag.String("return", "", "Return date YYYY-MM-DD (empty = one-way)")
-	adults     := flag.Int("adults", 1, "Number of adult passengers")
-	class      := flag.Int("class", 1, "Travel class: 1=Economy 2=Premium Economy 3=Business 4=First")
-	stops      := flag.Int("stops", 0, "Max stops: 0=Any 1=Nonstop 2=1stop 3=2stops")
-	currency   := flag.String("currency", "BRL", "Currency code (e.g. BRL, USD, EUR)")
-	lang       := flag.String("lang", "pt", "Language code (e.g. pt, en)")
-	country    := flag.String("country", "br", "Country code (e.g. br, us)")
-	output     := flag.String("output", "", "Save results to JSON file (optional)")
-	flag.Parse()
-
-	if *apiKey == "" {
-		notifier.Notify("API key required. Use -key flag or set SERPAPI_KEY env var.\n Get a free key at https://serpapi.com/")
+	output, params := getFlagsValues()
+	if params.APIKey == "" {
+		notifier.Notify("Error: API key required. Use -key flag or set SERPAPI_KEY env var.")
 		os.Exit(1)
 	}
-
-	params := lib.SearchParams{
-		APIKey:       *apiKey,
-		DepartureID:  *from,
-		ArrivalID:    *to,
-		OutboundDate: *outbound,
-		ReturnDate:   *returnDate,
-		Adults:       *adults,
-		TravelClass:  *class,
-		Stops:        *stops,
-		Currency:     *currency,
-		Language:     *lang,
-		Country:      *country,
-	}
+	notifier.Notify("Initializing Google Flights crawler...")
 
 	local, _ := time.LoadLocation("America/Sao_Paulo")
 	scheduler := gocron.NewScheduler(local)
@@ -63,9 +36,30 @@ func main() {
 		search(params, output)
 	})
 
-	notifier.Notify("📅 Agendador iniciado. Aguardando próximo sábado...")
+	notifier.Notify("Scheduler set to run every Saturday at 08:00 São Paulo time. Waiting for next run...")
 
 	scheduler.StartBlocking()
+}
+
+func getFlagsValues() (*string, lib.SearchParams) {
+	var p lib.SearchParams
+	var output string
+
+	flag.StringVar(&p.APIKey,       "key",      os.Getenv("SERPAPI_KEY"), "SerpApi API key")
+	flag.StringVar(&p.DepartureID,  "from",     "GYN",        "Departure IATA code")
+	flag.StringVar(&p.ArrivalID,    "to",       "GRU",        "Arrival IATA code")
+	flag.StringVar(&p.OutboundDate, "date",     "2026-05-02", "Outbound date YYYY-MM-DD")
+	flag.StringVar(&p.ReturnDate,   "return",   "",           "Return date YYYY-MM-DD")
+	flag.IntVar(&p.Adults,          "adults",   1,            "Number of adult passengers")
+	flag.IntVar(&p.TravelClass,     "class",    1,            "Travel class")
+	flag.IntVar(&p.Stops,           "stops",    0,            "Max stops")
+	flag.StringVar(&p.Currency,     "currency", "BRL",        "Currency code")
+	flag.StringVar(&p.Language,     "lang",     "pt",         "Language code")
+	flag.StringVar(&p.Country,      "country",  "br",         "Country code")
+	flag.StringVar(&output,         "output",   "",           "Save results to JSON file")
+	flag.Parse()
+
+	return &output, p
 }
 
 func printResults(r *entities.SearchResult) {

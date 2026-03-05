@@ -2,18 +2,19 @@ package notifier
 
 import (
 	"fmt"
-	"os"
 	lib "google-flights-crawler/lib"
+	"log"
+	"os"
 )
 
 func Notify(message string) {
 	host, _ := os.Hostname()
 	webhookURL := os.Getenv("DISCORD_WEBHOOK_URL")
 
-	fmt.Printf("🔔 [%s] %s\n", host, message)
+	log.Printf("🔔 [%s] %s\n", host, message)
 
 	if webhookURL == "" {
-		fmt.Println("⚠️ DISCORD_WEBHOOK_URL não configurada")
+		log.Println("⚠️ DISCORD_WEBHOOK_URL não configurada")
 		return
 	}
 
