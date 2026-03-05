@@ -9,6 +9,7 @@ import (
 	"time"
 	"github.com/joho/godotenv"
 	"log"
+	"github.com/go-co-op/gocron"
 
 	utils "google-flights-crawler/utils"
 	entities "google-flights-crawler/entities"
@@ -16,7 +17,19 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// ─── Display ─────────────────────────────────────────────────────────────────
+func main() {
+	err := godotenv.Load()
+	if err != nil { log.Println("Warning: .env file not found, relying on environment variables") }
+
+	local, _ := time.LoadLocation("America/Sao_Paulo")
+	s := gocron.NewScheduler(local)
+
+	s.Every(1).Saturday().At("08:00").Do(search)
+
+	notify("📅 Agendador iniciado. Aguardando próximo sábado...")
+
+	s.StartBlocking()
+}
 
 func printResults(r *entities.SearchResult) {
 	fmt.Printf("\n╔══════════════════════════════════════════════════════╗\n")
@@ -65,12 +78,7 @@ func printResults(r *entities.SearchResult) {
 	printSection("Other Flights", r.OtherFlights)
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
-func main() {
-	err := godotenv.Load()
-	if err != nil { log.Println("Warning: .env file not found, relying on environment variables") }
-
+func search() {
 	notify(fmt.Sprintf("Starting flight search: on %s", time.Now().AddDate(0, 1, 0).Format("2006-01-02")))
 
 	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
@@ -88,8 +96,8 @@ func main() {
 	flag.Parse()
 
 	if *apiKey == "" {
-		notify("❌  API key required. Use -key flag or set SERPAPI_KEY env var.")
-		notify("    Get a free key at https://serpapi.com/")
+		notify("API key required. Use -key flag or set SERPAPI_KEY env var.")
+		notify("Get a free key at https://serpapi.com/")
 		os.Exit(1)
 	}
 
@@ -128,8 +136,7 @@ func main() {
 
 	printResults(result)
 	
-	notify(fmt.Sprintf("✅ Search completed: %s → %s on %s. Best price: %.0f %s",
-		result.Origin, result.Destination, result.Date, result.BestPrice, result.Currency))
+	notify(fmt.Sprintf("✅ Search completed: %s → %s on %s. Best price: %.0f %s", result.Origin, result.Destination, result.Date, result.BestPrice, result.Currency))
 
 
 	if *output != "" {
