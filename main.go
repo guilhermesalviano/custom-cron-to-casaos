@@ -11,6 +11,7 @@ import (
 	"log"
 	"github.com/go-co-op/gocron"
 
+	notifier "google-flights-crawler/notifier"
 	utils "google-flights-crawler/utils"
 	entities "google-flights-crawler/entities"
 	lib "google-flights-crawler/lib"
@@ -26,7 +27,7 @@ func main() {
 
 	s.Every(1).Saturday().At("08:00").Do(search)
 
-	notify("📅 Agendador iniciado. Aguardando próximo sábado...")
+	notifier.Notify("📅 Agendador iniciado. Aguardando próximo sábado...")
 
 	s.StartBlocking()
 }
@@ -79,7 +80,7 @@ func printResults(r *entities.SearchResult) {
 }
 
 func search() {
-	notify(fmt.Sprintf("Starting flight search: on %s", time.Now().AddDate(0, 1, 0).Format("2006-01-02")))
+	notifier.Notify(fmt.Sprintf("Starting flight search: on %s", time.Now().AddDate(0, 1, 0).Format("2006-01-02")))
 
 	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
 	from       := flag.String("from", "GRU", "Departure IATA code (e.g. GRU, JFK, LHR)")
@@ -96,8 +97,8 @@ func search() {
 	flag.Parse()
 
 	if *apiKey == "" {
-		notify("API key required. Use -key flag or set SERPAPI_KEY env var.")
-		notify("Get a free key at https://serpapi.com/")
+		notifier.Notify("API key required. Use -key flag or set SERPAPI_KEY env var.")
+		notifier.Notify("Get a free key at https://serpapi.com/")
 		os.Exit(1)
 	}
 
@@ -115,11 +116,11 @@ func search() {
 		Country:      *country,
 	}
 
-	notify(fmt.Sprintf("🔍 Searching flights %s → %s on %s...\n", params.DepartureID, params.ArrivalID, params.OutboundDate))
+	notifier.Notify(fmt.Sprintf("🔍 Searching flights %s → %s on %s...\n", params.DepartureID, params.ArrivalID, params.OutboundDate))
 
 	result, err := lib.FetchFlights(params)
 	if err != nil {
-		notify(fmt.Sprintf("❌  Error: %v\n", err))
+		notifier.Notify(fmt.Sprintf("❌  Error: %v\n", err))
 		os.Exit(1)
 	}
 
@@ -136,25 +137,14 @@ func search() {
 
 	printResults(result)
 	
-	notify(fmt.Sprintf("✅ Search completed: %s → %s on %s. Best price: %.0f %s", result.Origin, result.Destination, result.Date, result.BestPrice, result.Currency))
-
+	notifier.Notify(fmt.Sprintf("✅ Search completed: %s → %s on %s. Best price: %.0f %s", result.Origin, result.Destination, result.Date, result.BestPrice, result.Currency))
 
 	if *output != "" {
 		data, _ := json.MarshalIndent(result, "", "  ")
 		if err := os.WriteFile(*output, data, 0644); err != nil {
-			notify(fmt.Sprintf("⚠️  Could not write output file: %v\n", err))
+			notifier.Notify(fmt.Sprintf("⚠️  Could not write output file: %v\n", err))
 		} else {
-			notify(fmt.Sprintf("💾 Results saved to %s", *output))
+			notifier.Notify(fmt.Sprintf("💾 Results saved to %s", *output))
 		}
 	}
-}
-
-func notify(message string) {
-	host, _ := os.Hostname()
-
-	lib.SendWebhook(os.Getenv("DISCORD_WEBHOOK_URL"), map[string]interface{}{
-		"content": fmt.Sprintf("[%s] %s", host, message),
-	})
-
-	fmt.Printf("🔔[%s] %s\n", host, message)
 }
