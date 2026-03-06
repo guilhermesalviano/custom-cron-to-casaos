@@ -27,11 +27,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	flights, err := utils.LoadSearchParams("./flightsToFollow.csv")
+	path := "/media/ShareDatabase"
+	flights, err := utils.LoadSearchParams(path)
 	if err != nil {
-		notifier.Notify("Error loading search params: " + err.Error())
-		os.Exit(1)
+		flights, err = utils.LoadSearchParams("./flightsToFollow.csv")
+		if err != nil {
+			notifier.Notify("Error loading search params: " + err.Error())
+			os.Exit(1)
+		}
 	}
+	notifier.Notify(fmt.Sprintf("Loaded %d flight search parameters", len(flights)))
 
 	local, _ := time.LoadLocation("America/Sao_Paulo")
 	scheduler := gocron.NewScheduler(local)
