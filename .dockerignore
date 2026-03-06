@@ -4,3 +4,4 @@ output/
 flights
 output.json
 .env
+docker-compose.yml

@@ -73,11 +73,19 @@ func main() {
 	scheduler.StartBlocking()
 }
 
-func getApiKey() (*string) {
-	apiKey     := flag.String("key", os.Getenv("SERPAPI_KEY"), "SerpApi API key (or set SERPAPI_KEY env var)")
-	flag.Parse()
+func getApiKey() *string {
+    if key := os.Getenv("SERPAPI_KEY"); key != "" {
+        return &key
+    }
 
-	return apiKey
+    key := flag.String("key", "", "SerpApi API key")
+    flag.Parse()
+
+    if *key == "" {
+        notifier.Notify("SERPAPI_KEY não definida. Use a env var ou o flag -key")
+    }
+
+    return key
 }
 
 func getFlagsValuesOld() (lib.SearchParams, *string) {
