@@ -17,6 +17,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type Scheduler struct {
+	*gocron.Scheduler
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil { notifier.Notify("Warning: .env file not found, relying on environment variables") }
@@ -40,8 +44,14 @@ func main() {
 	notifier.Notify(fmt.Sprintf("Loaded %d flight search parameters", len(flights)))
 
 	local, _ := time.LoadLocation("America/Sao_Paulo")
-	scheduler := gocron.NewScheduler(local)
+	scheduler := &Scheduler{gocron.NewScheduler(local)}
 
+	scheduler.ScheduleFlightsCrawler(flights, apiKey)
+
+	scheduler.StartBlocking()
+}
+
+func (scheduler *Scheduler) ScheduleFlightsCrawler(flights []utils.FlightCsv, apiKey *string) {
 	for _, flight := range flights {
 		notifier.Notify(fmt.Sprintf("📅 Schedule: %s → %s on %s (every %s at %s)",
 			flight.DepartureID, flight.ArrivalID, flight.OutboundDate, flight.Day, flight.Time))
@@ -60,17 +70,15 @@ func main() {
 			Country:      flight.Country,
 		}
 
-		_, err := utils.ScheduleOnDay(scheduler, flight.Day).At(flight.Time).Do(func() {
+		_, err := utils.ScheduleOnDay(scheduler.Scheduler, flight.Day).At(flight.Time).Do(func() {
 			startGoogleFlightsCrawler(c, nil)
 		})
 
 		if err != nil { 
 			notifier.Notify(fmt.Sprintf("Error scheduling job: %s", err))
-    	os.Exit(1)
+			os.Exit(1)
 		}
 	}
-
-	scheduler.StartBlocking()
 }
 
 func getApiKey() *string {
