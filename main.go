@@ -44,19 +44,19 @@ func main() {
 	notifier.Notify(fmt.Sprintf("Loaded %d flight search parameters", len(flights)))
 
 	local, _ := time.LoadLocation("America/Sao_Paulo")
-	scheduler := &Scheduler{gocron.NewScheduler(local)}
+	scheduler := &Scheduler{ gocron.NewScheduler(local) }
 
-	scheduler.ScheduleFlightsCrawler(flights, apiKey)
+	scheduler.scheduleFlightsCrawler(flights, apiKey)
 
 	scheduler.StartBlocking()
 }
 
-func (scheduler *Scheduler) ScheduleFlightsCrawler(flights []utils.FlightCsv, apiKey *string) {
+func (scheduler *Scheduler) scheduleFlightsCrawler(flights []utils.FlightCsv, apiKey *string) {
 	for _, flight := range flights {
 		notifier.Notify(fmt.Sprintf("📅 Schedule: %s → %s on %s (every %s at %s)",
 			flight.DepartureID, flight.ArrivalID, flight.OutboundDate, flight.Day, flight.Time))
 
-		c := lib.SearchParams{
+		params := lib.SearchParams{
 			APIKey:       *apiKey,
 			DepartureID:  flight.DepartureID,
 			ArrivalID:    flight.ArrivalID,
@@ -71,7 +71,7 @@ func (scheduler *Scheduler) ScheduleFlightsCrawler(flights []utils.FlightCsv, ap
 		}
 
 		_, err := utils.ScheduleOnDay(scheduler.Scheduler, flight.Day).At(flight.Time).Do(func() {
-			startGoogleFlightsCrawler(c, nil)
+			startGoogleFlightsCrawler(params, nil)
 		})
 
 		if err != nil { 
