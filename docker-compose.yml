@@ -25,10 +25,7 @@ services:
       - /DATA/ShareDatabase:/media/ShareDatabase
 
   wishlist:
-    image: ${DOCKER_USERNAME:-your-dockerhub-user}/wishlist:latest
-    build:
-      context: ./services/wishlist
-      dockerfile: Dockerfile
+    image: guilhermesalviano/wishlist:latest
     hostname: wishlist
     restart: unless-stopped
     network_mode: bridge

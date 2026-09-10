@@ -11,7 +11,7 @@ A Go-based application that schedules automated web scraping tasks for Google Fl
 - **Notification System**: Send alerts via Discord webhooks or NTFY.
 - **Database Integration**: Stores results in MySQL database.
 - **Docker Support**: Containerized deployment with Docker Compose.
-- **Independent Wishlist Image**: Amazon wishlist can be deployed separately as `${DOCKER_USERNAME}/wishlist`.
+- **Independent Wishlist Image**: Amazon wishlist can be deployed separately as `guilhermesalviano/wishlist`.
 - **Environment Configuration**: Uses .env files for sensitive configuration.
 
 ## Prerequisites
@@ -88,9 +88,17 @@ The application will start the scheduler and begin executing tasks according to 
    docker-compose up -d
    ```
 
-The independent wishlist service uses `WISHLIST_ID`, `WISHLIST_DAY`, and `WISHLIST_TIME` instead of the combined application's schedules CSV. Its timezone defaults to `America/Sao_Paulo`; set `WISHLIST_TIMEZONE` to override it. GitHub releases publish the image as `${DOCKER_USERNAME}/wishlist` with both the release version and `latest` tags.
+The independent wishlist service uses `WISHLIST_ID`, `WISHLIST_DAY`, and `WISHLIST_TIME` instead of the combined application's schedules CSV. Its timezone defaults to `America/Sao_Paulo`; set `WISHLIST_TIMEZONE` to override it. GitHub releases publish the image as `guilhermesalviano/wishlist` with both the release version and `latest` tags.
 
 See [services/wishlist/README.md](services/wishlist/README.md) for the standalone service configuration.
+
+To run the published wishlist container locally:
+
+```bash
+cp .env.wishlist.example .env.wishlist
+# edit .env.wishlist
+docker compose -f docker-compose.wishlist.yml up -d
+```
 
 ## License
 

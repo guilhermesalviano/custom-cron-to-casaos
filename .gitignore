@@ -1,5 +1,6 @@
 scheduler
 
 .env
+.env.wishlist
 
 output.json

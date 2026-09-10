@@ -23,3 +23,26 @@ Build and run locally:
 go run .
 docker build -t wishlist .
 ```
+
+## Run the published container
+
+From the repository root, create the local configuration file:
+
+```bash
+cp .env.wishlist.example .env.wishlist
+# edit .env.wishlist with your wishlist and database values
+```
+
+Start the published image from Docker Hub:
+
+```bash
+docker compose -f docker-compose.wishlist.yml pull
+docker compose -f docker-compose.wishlist.yml up -d
+docker compose -f docker-compose.wishlist.yml logs -f wishlist
+```
+
+Stop it with:
+
+```bash
+docker compose -f docker-compose.wishlist.yml down
+```
