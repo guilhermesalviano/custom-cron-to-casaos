@@ -23,3 +23,30 @@ services:
       icon: "https://www.beorol.com/files/watermark/files/images/slike_proizvoda/thumbs_w/JS120_w_800_800px.jpg"
     volumes:
       - /DATA/ShareDatabase:/media/ShareDatabase
+
+  wishlist:
+    image: ${DOCKER_USERNAME:-your-dockerhub-user}/wishlist:latest
+    build:
+      context: ./services/wishlist
+      dockerfile: Dockerfile
+    hostname: wishlist
+    restart: unless-stopped
+    network_mode: bridge
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    environment:
+      WISHLIST_ID: ${WISHLIST_ID}
+      WISHLIST_DAY: ${WISHLIST_DAY:-Saturday}
+      WISHLIST_TIME: ${WISHLIST_TIME:-17:00}
+      WISHLIST_TIMEZONE: ${WISHLIST_TIMEZONE:-America/Sao_Paulo}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
+      NTFY_TOPIC: ${NTFY_TOPIC}
+    labels:
+      icon: "https://www.beorol.com/files/watermark/files/images/slike_proizvoda/thumbs_w/JS120_w_800_800px.jpg"
